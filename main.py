@@ -107,13 +107,16 @@ def add_contact_to_all_sources(first_name, last_name, phone_number, email):
     backup_all()
 
 # Ana menü içindeki fonksiyonlar
+
 def list_contacts_menu():
     contacts = list_contacts()
     if not contacts:
         print("Listelenecek kişi bulunamadı.")
     else:
         for contact in contacts:
-            print("Ad: {}, Soyad: {}, Telefon: {}, E-posta: {}".format(contact[1], contact[2], contact[3], contact[4]))
+            print("Ad: {}, Soyad: {}, Telefon: {}, E-posta: {}, Oluşturulma Tarihi: {}, Güncellenme Tarihi: {}"
+                  .format(contact[1], contact[2], contact[3], contact[4], contact[5], contact[6]))
+
 
 # Kişileri Listeleme işlemi
 def list_contacts():
@@ -121,7 +124,9 @@ def list_contacts():
     cursor = conn.cursor()
 
     # Varsayılan olarak, ad ve soyada göre sırala
-    cursor.execute("SELECT * FROM contacts ORDER BY first_name, last_name")
+    #cursor.execute("SELECT * FROM contacts ORDER BY first_name, last_name")
+    cursor.execute("SELECT *, created_at, updated_at FROM contacts ORDER BY first_name, last_name")
+
 
     contacts = cursor.fetchall()
     conn.close()
