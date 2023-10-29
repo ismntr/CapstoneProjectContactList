@@ -2,12 +2,13 @@ import sqlite3
 import csv
 import json
 import os
+import shutil
 
 from simple_term_menu import TerminalMenu
 
 # Klasörleri oluşturmak için yardımcı fonksiyon
 def create_folders():
-    folders = ["SQLData", "CSVData", "JSONData", "IsmetifyData"]
+    folders = ["SQLData", "CSVData", "JSONData", "IsmetifyData", "Backup"]
     for folder in folders:
         if not os.path.exists(folder):
             os.makedirs(folder)
@@ -90,7 +91,6 @@ def add_contact_to_json(first_name, last_name, phone_number, email):
 
     print("Contact added successfully to JSON.")
 
-
 # İsmetify verilerine kişi ekleme fonksiyonu
 def add_contact_to_ismetify(first_name, last_name, phone_number, email):
     new_contact_str = "|".join([first_name, last_name, phone_number, email])
@@ -104,6 +104,7 @@ def add_contact_to_all_sources(first_name, last_name, phone_number, email):
     add_contact_to_csv(first_name, last_name, phone_number, email)
     add_contact_to_json(first_name, last_name, phone_number, email)
     add_contact_to_ismetify(first_name, last_name, phone_number, email)
+    backup_all()
 
 # Ana menü içindeki fonksiyonlar
 def list_contacts_menu():
@@ -126,6 +127,7 @@ def list_contacts():
     conn.close()
 
     return contacts
+
 # SQLite veritabanından kişi silme fonksiyonu
 def delete_contact_from_sqlite(first_name, last_name, email):
     conn = sqlite3.connect("SQLData/mydatabase.db")
@@ -217,6 +219,7 @@ def delete_contact_from_all_sources(first_name, last_name, email):
     delete_contact_from_csv(first_name, last_name, email)
     delete_contact_from_json(first_name, last_name, email)
     delete_contact_from_ismetify(first_name, last_name, email)
+    backup_all()
 
 # Ana menü içindeki fonksiyonlar
 def edit_contact_menu():
@@ -226,34 +229,95 @@ def edit_contact_menu():
     else:
         for index, contact in enumerate(contacts):
             print("{}. Ad: {}, Soyad: {}, Telefon: {}, E-posta: {}".format(index, contact[1], contact[2], contact[3], contact[4]))
-        contact_index = int(input("Düzenlemek istediğiniz kişinin sıra numarasını girin 0'dan başlar. (q: İptal): "))
+        contact_index = input("Düzenlemek istediğiniz kişinin sıra numarasını girin (q: İptal): ")
         
         if contact_index == 'q':
             print("İptal edildi.")
-        elif 0 <= contact_index < len(contacts):
-            contact = contacts[contact_index]
-            first_name, last_name, phone_number, email = contact[1], contact[2], contact[3], contact[4]
+        elif contact_index.isdigit():
+            contact_index = int(contact_index)
+            if 0 <= contact_index < len(contacts):
+                contact = contacts[contact_index]
+                first_name, last_name, phone_number, email = contact[1], contact[2], contact[3], contact[4]
 
-            # Düzenlenecek kişinin bilgilerini göster
-            print("Düzenleniyor: ")
-            print("Ad: {}".format(first_name))
-            print("Soyad: {}".format(last_name))
-            print("Telefon Numarası: {}".format(phone_number))
-            print("E-posta: {}".format(email))
+                # Düzenlenecek kişinin bilgilerini göster
+                print("Düzenleniyor: ")
+                print("Ad: {}".format(first_name))
+                print("Soyad: {}".format(last_name))
+                print("Telefon Numarası: {}".format(phone_number))
+                print("E-posta: {}".format(email))
 
-            # Yeni bilgileri al
-            new_first_name = input("Yeni Ad: ")
-            new_last_name = input("Yeni Soyad: ")
-            new_phone_number = input("Yeni Telefon Numarası: ")
-            new_email = input("Yeni E-posta: ")
+                # Yeni bilgileri al
+                new_first_name = input("Yeni Ad: ")
+                new_last_name = input("Yeni Soyad: ")
+                new_phone_number = input("Yeni Telefon Numarası: ")
+                new_email = input("Yeni E-posta: ")
 
-            # Kişiyi güncelle
-            delete_contact_from_all_sources(first_name, last_name, email)
-            add_contact_to_all_sources(new_first_name, new_last_name, new_phone_number, new_email)
-            print("Kişi başarıyla güncellendi.")
+                # Kişiyi güncelle
+                delete_contact_from_all_sources(first_name, last_name, email)
+                add_contact_to_all_sources(new_first_name, new_last_name, new_phone_number, new_email)
+                print("Kişi başarıyla güncellendi.")
+            else:
+                print("Geçersiz bir sıra numarası girdiniz.")
         else:
-            print("Geçersiz bir sıra numarası girdiniz.")
+            print("Geçersiz giriş. Lütfen sıra numarasını girin veya 'q' ile iptal edin.")
+            backup_all()
 
+# Yedekleme işlemleri için yardımcı fonksiyonlar
+def backup_sql_data():
+    shutil.copy("SQLData/mydatabase.db", "Backup/mydatabase_backup.db")
+
+def backup_csv_data():
+    shutil.copy("CSVData/contacts.csv", "Backup/contacts_backup.csv")
+
+def backup_json_data():
+    shutil.copy("JSONData/contacts.json", "Backup/contacts_backup.json")
+
+def backup_ismetify_data():
+    shutil.copy("IsmetifyData/contacts.txt", "Backup/contacts_backup.txt")
+def backup_all():
+    backup_sql_data()
+    backup_csv_data()
+    backup_json_data()
+    backup_ismetify_data()
+   
+
+# Yedekten geri yükleme işlemleri için yardımcı fonksiyonlar
+def restore_sql_data():
+    shutil.copy("Backup/mydatabase_backup.db", "SQLData/mydatabase.db")
+
+def restore_csv_data():
+    shutil.copy("Backup/contacts_backup.csv", "CSVData/contacts.csv")
+
+def restore_json_data():
+    shutil.copy("Backup/contacts_backup.json", "JSONData/contacts.json")
+
+def restore_ismetify_data():
+    shutil.copy("Backup/contacts_backup.txt", "IsmetifyData/contacts.txt")
+
+# Yedekten geri yükleme işlemleri için menü
+def restore_backup():
+    print("Yedekten Geri Yükleme Menüsü")
+    print("1. SQL Verilerini Geri Yükle")
+    print("2. CSV Verilerini Geri Yükle")
+    print("3. JSON Verilerini Geri Yükle")
+    print("4. İsmetify Verilerini Geri Yükle")
+    
+    choice = input("Geri yüklemek istediğiniz veri türünün numarasını girin: ")
+    
+    if choice == '1':
+        restore_sql_data()
+        print("SQL verileri başarıyla geri yüklendi.")
+    elif choice == '2':
+        restore_csv_data()
+        print("CSV verileri başarıyla geri yüklendi.")
+    elif choice == '3':
+        restore_json_data()
+        print("JSON verileri başarıyla geri yüklendi.")
+    elif choice == '4':
+        restore_ismetify_data()
+        print("İsmetify verileri başarıyla geri yüklendi.")
+    else:
+        print("Geçersiz seçenek. Lütfen tekrar deneyin.")
 def main_menu():
     menu_title = "Ana Menü"
     menu_items = ["Kişi Ekle", "Kişi Sil", "Kişileri Listele", "Kişi Düzenle", "Yedekten Geri Yükle", "Çıkış"]
@@ -277,7 +341,7 @@ def main_menu():
         elif selected_index == 3:
             edit_contact_menu()
         elif selected_index == 4:
-            # Yedekten Geri Yükleme işlemi için gerekli kodu buraya ekleyin
+            restore_backup()
             pass
         elif selected_index == 5:
             print("Çıkış yapılıyor...")
